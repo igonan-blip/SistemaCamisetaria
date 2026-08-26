@@ -6,6 +6,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import { Pedidos } from "@/pages/Pedidos";
+import { PedidoDetalhe } from "@/pages/PedidoDetalhe";
 import { Kanban } from "@/pages/Kanban";
 import { Clientes } from "@/pages/Clientes";
 import { Financeiro } from "@/pages/Financeiro";
@@ -30,6 +31,7 @@ export function App() {
           >
             <Route path="/" element={<Dashboard />} />
             <Route path="/pedidos" element={<Pedidos />} />
+            <Route path="/pedidos/:id" element={<PedidoDetalhe />} />
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/clientes" element={<Clientes />} />
 

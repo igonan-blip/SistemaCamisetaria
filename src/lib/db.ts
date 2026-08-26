@@ -1,12 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type {
-  Cliente,
-  EtapaProducao,
-  Pagamento,
-  Pedido,
-  Produto,
-  Tamanho,
-} from "@/types/database";
+import type { Cliente, EtapaProducao, Pagamento, Pedido, Produto, StatusPagamento, Tamanho } from "@/types/database";
 
 export const money = (value: number | null | undefined) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
@@ -114,4 +107,147 @@ export async function arteUrl(path: string) {
   const { data, error } = await supabase.storage.from("artes-pedidos").createSignedUrl(path, 3600);
   if (error) throw error;
   return data.signedUrl;
+}
+
+export async function deleteArte(id: string, path: string) {
+  const { error } = await supabase.from("artes").delete().eq("id", id);
+  if (error) throw error;
+  const { error: storageError } = await supabase.storage.from("artes-pedidos").remove([path]);
+  if (storageError) throw storageError;
+}
+
+// ---------------------------------------------------------------------------
+// Etapa 7 — Kanban: prazo e histórico
+// ---------------------------------------------------------------------------
+
+export type PrazoStatus = "sem_prazo" | "normal" | "atencao" | "urgente" | "atrasado";
+
+export function diasRestantes(dataEntrega: string | null | undefined): number | null {
+  if (!dataEntrega) return null;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const entrega = new Date(`${dataEntrega}T00:00:00`);
+  return Math.round((entrega.getTime() - hoje.getTime()) / 86400000);
+}
+
+export function prazoStatus(dataEntrega: string | null | undefined, etapaSlug?: string | null): PrazoStatus {
+  if (etapaSlug === "entregue") return "normal";
+  const dias = diasRestantes(dataEntrega);
+  if (dias === null) return "sem_prazo";
+  if (dias < 0) return "atrasado";
+  if (dias <= 1) return "urgente";
+  if (dias <= 3) return "atencao";
+  return "normal";
+}
+
+export const PRAZO_LABEL: Record<PrazoStatus, string> = {
+  sem_prazo: "Sem prazo",
+  normal: "No prazo",
+  atencao: "Atenção",
+  urgente: "Urgente",
+  atrasado: "Atrasado",
+};
+
+export const PRAZO_CLASS: Record<PrazoStatus, string> = {
+  sem_prazo: "border-ink-700/10 bg-white text-text-500",
+  normal: "border-teal-500/30 bg-teal-500/10 text-teal-600",
+  atencao: "border-amber-500/30 bg-amber-500/10 text-amber-500",
+  urgente: "border-brick-500/40 bg-brick-500/10 text-brick-500",
+  atrasado: "border-brick-500 bg-brick-500 text-white",
+};
+
+export async function getPedidosResumo() {
+  const [pedidosRes, itensRes, pagamentosRes] = await Promise.all([
+    supabase
+      .from("pedidos")
+      .select("*, clientes(nome_empresa, nome_responsavel), etapas_producao(nome, slug, ordem)")
+      .order("data_entrega", { ascending: true, nullsFirst: false }),
+    supabase.from("itens_pedido").select("pedido_id, quantidade_total"),
+    supabase.from("pagamentos").select("pedido_id, valor"),
+  ]);
+  if (pedidosRes.error) throw pedidosRes.error;
+  if (itensRes.error) throw itensRes.error;
+  if (pagamentosRes.error) throw pagamentosRes.error;
+
+  const pecasPorPedido = new Map<string, number>();
+  for (const item of itensRes.data || []) {
+    pecasPorPedido.set(item.pedido_id, (pecasPorPedido.get(item.pedido_id) || 0) + Number(item.quantidade_total));
+  }
+  const pagoPorPedido = new Map<string, number>();
+  for (const pagamento of pagamentosRes.data || []) {
+    pagoPorPedido.set(pagamento.pedido_id, (pagoPorPedido.get(pagamento.pedido_id) || 0) + Number(pagamento.valor));
+  }
+
+  return (pedidosRes.data || []).map((pedido: any) => {
+    const pago = pagoPorPedido.get(pedido.id) || 0;
+    return {
+      ...pedido,
+      quantidade_pecas: pecasPorPedido.get(pedido.id) || 0,
+      valor_pago: pago,
+      valor_saldo: Number(pedido.valor_total) - pago,
+    };
+  });
+}
+
+export async function getMovimentacoes(pedidoId: string) {
+  const { data, error } = await supabase
+    .from("movimentacoes_pedido")
+    .select("*, etapas_anterior:etapas_producao!etapa_anterior_id(nome), etapas_nova:etapas_producao!etapa_nova_id(nome)")
+    .eq("pedido_id", pedidoId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// ---------------------------------------------------------------------------
+// Etapa 8 — Financeiro: status e período
+// ---------------------------------------------------------------------------
+
+export function statusFinanceiro(pedido: { valor_total: number; data_entrega: string | null }, valorPago: number): StatusPagamento {
+  const total = Number(pedido.valor_total);
+  if (valorPago <= 0) {
+    if (pedido.data_entrega && diasRestantes(pedido.data_entrega)! < 0) return "atrasado";
+    return "pendente";
+  }
+  if (valorPago >= total) return "pago";
+  if (pedido.data_entrega && diasRestantes(pedido.data_entrega)! < 0) return "atrasado";
+  return "parcialmente_pago";
+}
+
+export const STATUS_FINANCEIRO_LABEL: Record<StatusPagamento, string> = {
+  pendente: "Pendente",
+  parcialmente_pago: "Parcialmente pago",
+  pago: "Pago",
+  atrasado: "Atrasado",
+};
+
+// ---------------------------------------------------------------------------
+// Etapa 9 — Dashboard: recorte por período
+// ---------------------------------------------------------------------------
+
+export type PeriodoDashboard = "hoje" | "semana" | "mes" | "mes_anterior" | "personalizado";
+
+export function intervaloPeriodo(periodo: PeriodoDashboard, inicioCustom?: string, fimCustom?: string) {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+  if (periodo === "hoje") {
+    return { inicio: fmt(hoje), fim: fmt(hoje) };
+  }
+  if (periodo === "semana") {
+    const inicio = new Date(hoje);
+    inicio.setDate(hoje.getDate() - hoje.getDay());
+    return { inicio: fmt(inicio), fim: fmt(hoje) };
+  }
+  if (periodo === "mes") {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    return { inicio: fmt(inicio), fim: fmt(hoje) };
+  }
+  if (periodo === "mes_anterior") {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+    return { inicio: fmt(inicio), fim: fmt(fim) };
+  }
+  return { inicio: inicioCustom || fmt(hoje), fim: fimCustom || fmt(hoje) };
 }
