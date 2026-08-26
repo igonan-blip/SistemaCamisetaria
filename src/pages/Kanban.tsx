@@ -1,10 +1,3 @@
-import { EmptyState } from "@/components/EmptyState";
-
-export function Kanban() {
-  return (
-    <EmptyState
-      title="Kanban de produção"
-      description="O quadro visual com as etapas cadastradas em etapas_producao e o arrastar-e-soltar dos pedidos entrará aqui na próxima etapa."
-    />
-  );
-}
+import { useEffect,useState } from "react";
+import { getEtapas,getPedidos,movePedido } from "@/lib/db";
+export function Kanban(){const [etapas,setEtapas]=useState<any[]>([]),[pedidos,setPedidos]=useState<any[]>([]),[error,setError]=useState("");async function load(){try{setEtapas(await getEtapas());setPedidos(await getPedidos())}catch(e:any){setError(e.message)}}useEffect(()=>{load()},[]);async function move(id:string,etapa:string){try{await movePedido(id,etapa);await load()}catch(e:any){setError(e.message)}}return <div className="space-y-5"><div><h2 className="text-2xl">Produção</h2><p className="text-sm text-text-600">Pedidos por etapa.</p></div>{error&&<p className="text-sm text-red-600">{error}</p>}<div className="flex gap-4 overflow-x-auto pb-4">{etapas.map(e=><section key={e.id} className="card min-w-[280px] flex-1 p-3"><h3 className="mb-3 flex justify-between">{e.nome}<span className="tag">{pedidos.filter(p=>p.etapa_id===e.id).length}</span></h3><div className="space-y-3">{pedidos.filter(p=>p.etapa_id===e.id).map(p=><article key={p.id} className="rounded-tag border bg-white p-3"><div className="font-mono text-xs">#{p.numero_pedido}</div><div className="font-medium">{p.clientes?.nome_empresa||"Cliente"}</div><select className="input mt-3" value={e.id} onChange={x=>move(p.id,x.target.value)}><option value={e.id}>{e.nome}</option>{etapas.filter(x=>x.id!==e.id).map(x=><option key={x.id} value={x.id}>{x.nome}</option>)}</select></article>)}</div></section>)}</div></div>}
