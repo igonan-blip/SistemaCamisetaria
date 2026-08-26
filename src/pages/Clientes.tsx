@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Cliente } from "@/types/database";
 
- HEAD
 type ClienteForm = {
   nome_empresa: string;
   nome_responsavel: string;
@@ -357,15 +356,4 @@ export function Clientes() {
       )}
     </div>
   );
-
-export function Clientes() {
-  const [rows, setRows] = useState<Cliente[]>([]); const [q, setQ] = useState(""); const [loading,setLoading]=useState(true); const [error,setError]=useState(""); const [open,setOpen]=useState(false);
-  const [form,setForm]=useState({nome_empresa:"",nome_responsavel:"",telefone:"",cpf_cnpj:"",email:"",cidade:"",estado:""});
-  async function load(){setLoading(true);const {data,error}=await supabase.from("clientes").select("*").order("nome_empresa");if(error)setError(error.message);else setRows((data||[]) as Cliente[]);setLoading(false)}
-  useEffect(()=>{load()},[]);
-  const filtered=useMemo(()=>rows.filter(x=>`${x.nome_empresa} ${x.nome_responsavel||""} ${x.telefone||""} ${x.cpf_cnpj||""}`.toLowerCase().includes(q.toLowerCase())),[rows,q]);
-  async function save(e:React.FormEvent){e.preventDefault();setError("");if(!form.nome_empresa.trim())return setError("Informe o nome da empresa/cliente.");const {error}=await supabase.from("clientes").insert(form);if(error)setError(error.message);else{setOpen(false);setForm({nome_empresa:"",nome_responsavel:"",telefone:"",cpf_cnpj:"",email:"",cidade:"",estado:""});load()}}
-  async function toggle(c:Cliente){await supabase.from("clientes").update({ativo:!c.ativo}).eq("id",c.id);load()}
-  return <div className="space-y-5"><div className="flex items-center justify-between gap-3"><div><h2 className="text-2xl">Clientes</h2><p className="text-sm text-text-600">Cadastro e pesquisa de clientes.</p></div><button className="btn-primary" onClick={()=>setOpen(true)}>Novo cliente</button></div><input className="input max-w-xl" placeholder="Buscar por nome, telefone ou CPF/CNPJ" value={q} onChange={e=>setQ(e.target.value)}/>{error&&<p className="text-sm text-red-600">{error}</p>}<div className="card overflow-hidden"><table className="w-full text-sm"><thead className="bg-paper-100 text-left"><tr><th className="p-3">Cliente</th><th className="p-3">Responsável</th><th className="p-3">Telefone</th><th className="p-3">Status</th><th/></tr></thead><tbody>{loading?<tr><td className="p-5" colSpan={5}>Carregando…</td></tr>:filtered.map(c=><tr key={c.id} className="border-t"><td className="p-3 font-medium">{c.nome_empresa}</td><td className="p-3">{c.nome_responsavel||"—"}</td><td className="p-3">{c.telefone||"—"}</td><td className="p-3">{c.ativo?<span className="tag">Ativo</span>:<span className="tag">Inativo</span>}</td><td className="p-3 text-right"><button className="btn-secondary" onClick={()=>toggle(c)}>{c.ativo?"Desativar":"Ativar"}</button></td></tr>)}{!loading&&!filtered.length&&<tr><td className="p-6 text-center text-text-500" colSpan={5}>Nenhum cliente encontrado.</td></tr>}</tbody></table></div>{open&&<div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4"><form onSubmit={save} className="card w-full max-w-2xl space-y-4 p-5"><h3 className="text-xl">Novo cliente</h3><div className="grid gap-3 sm:grid-cols-2">{Object.entries(form).map(([k,v])=><input key={k} className="input" placeholder={k.replaceAll("_"," ")} value={v} onChange={e=>setForm({...form,[k]:e.target.value})}/>)}</div><div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={()=>setOpen(false)}>Cancelar</button><button className="btn-primary">Salvar</button></div></form></div>}</div>
-
 }
