@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply font-body text-text-900;
+  }
+  body {
+    @apply antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-teal-500;
+  }
+}
+
+@layer components {
+  /* "Etiqueta" tag — referência às etiquetas de composição de tecido,
+     usada para números de pedido, status e badges de etapa. */
+  .tag {
+    @apply inline-flex items-center gap-1 rounded-tag border border-ink-700/10
+           bg-white px-2 py-0.5 font-mono text-xs tracking-wide text-text-600;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-tag bg-teal-500 px-4 py-2
+           text-sm font-medium text-white transition-colors hover:bg-teal-600
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-tag border border-ink-700/15
+           bg-white px-4 py-2 text-sm font-medium text-text-900 transition-colors
+           hover:bg-paper-100 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input {
+    @apply w-full rounded-tag border border-ink-700/15 bg-white px-3 py-2 text-sm
+           text-text-900 placeholder:text-text-400 focus:border-teal-500;
+  }
+
+  .card {
+    @apply rounded-tag border border-ink-700/10 bg-white;
+  }
+}
