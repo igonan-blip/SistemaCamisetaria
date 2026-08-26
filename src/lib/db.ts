@@ -9,7 +9,7 @@ import type {
   Tamanho,
 } from "@/types/database";
 
-import type { Cliente, EtapaProducao, ItemPedido, Pagamento, Pedido, Produto, Tamanho } from "@/types/database";
+import type { Cliente, EtapaProducao, Pagamento, Pedido, Produto, Tamanho } from "@/types/database";
 
 
 export const money = (value: number | null | undefined) =>
