@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+HEAD
 import type {
   Cliente,
   EtapaProducao,
@@ -7,6 +8,9 @@ import type {
   Produto,
   Tamanho,
 } from "@/types/database";
+
+import type { Cliente, EtapaProducao, ItemPedido, Pagamento, Pedido, Produto, Tamanho } from "@/types/database";
+
 
 export const money = (value: number | null | undefined) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
