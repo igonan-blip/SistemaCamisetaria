@@ -1,10 +1,2 @@
-import { EmptyState } from "@/components/EmptyState";
-
-export function Financeiro() {
-  return (
-    <EmptyState
-      title="Financeiro"
-      description="Visão consolidada de valor total, valor pago e saldo por pedido, calculada a partir da tabela pagamentos, entrará aqui na próxima etapa."
-    />
-  );
-}
+import { useEffect,useState } from "react"; import { supabase } from "@/lib/supabase"; import { money } from "@/lib/db";
+export function Financeiro(){const [rows,setRows]=useState<any[]>([]),[payments,setPayments]=useState<any[]>([]);async function load(){const [a,b]=await Promise.all([supabase.from("pedidos").select("*,clientes(nome_empresa)").order("created_at",{ascending:false}),supabase.from("pagamentos").select("*")]);setRows(a.data||[]);setPayments(b.data||[])}useEffect(()=>{load()},[]);const paid=payments.reduce((s,p)=>s+Number(p.valor),0),total=rows.reduce((s,p)=>s+Number(p.valor_total),0);return <div className="space-y-5"><div><h2 className="text-2xl">Financeiro</h2><p className="text-sm text-text-600">Valores calculados a partir dos pedidos e pagamentos reais.</p></div><div className="grid gap-4 sm:grid-cols-3"><div className="card p-4"><p className="text-xs text-text-500">Total vendido</p><strong className="text-2xl">{money(total)}</strong></div><div className="card p-4"><p className="text-xs text-text-500">Total recebido</p><strong className="text-2xl">{money(paid)}</strong></div><div className="card p-4"><p className="text-xs text-text-500">Saldo</p><strong className="text-2xl">{money(total-paid)}</strong></div></div><div className="card overflow-hidden"><table className="w-full text-sm"><thead className="bg-paper-100 text-left"><tr><th className="p-3">Pedido</th><th className="p-3">Cliente</th><th className="p-3">Total</th><th className="p-3">Pago</th><th className="p-3">Saldo</th></tr></thead><tbody>{rows.map(p=>{const x=payments.filter(x=>x.pedido_id===p.id).reduce((s,x)=>s+Number(x.valor),0);return <tr className="border-t" key={p.id}><td className="p-3">#{p.numero_pedido}</td><td className="p-3">{p.clientes?.nome_empresa}</td><td className="p-3">{money(p.valor_total)}</td><td className="p-3">{money(x)}</td><td className="p-3">{money(Number(p.valor_total)-x)}</td></tr>})}</tbody></table></div></div>}
