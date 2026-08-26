@@ -116,6 +116,11 @@ export async function deleteArte(id: string, path: string) {
   if (storageError) throw storageError;
 }
 
+export async function deletePedido(pedidoId: string) {
+  const { error } = await supabase.from("pedidos").delete().eq("id", pedidoId);
+  if (error) throw error;
+}
+
 // ---------------------------------------------------------------------------
 // Etapa 7 — Kanban: prazo e histórico
 // ---------------------------------------------------------------------------

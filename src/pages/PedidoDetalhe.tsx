@@ -5,6 +5,7 @@ import {
   arteUrl,
   dateBR,
   deleteArte,
+  deletePedido,
   diasRestantes,
   getPedidoCompleto,
   money,
@@ -105,6 +106,19 @@ export function PedidoDetalhe() {
     }
   }
 
+  async function handleDeletePedido() {
+    if (!id) return;
+    const confirmar = window.confirm("Tem certeza que deseja excluir este pedido inteiramente? Esta ação não pode ser desfeita.");
+    if (!confirmar) return;
+
+    try {
+      await deletePedido(id);
+      navigate("/pedidos");
+    } catch (e: any) {
+      setError(e.message);
+    }
+  }
+
   async function savePayment(e: React.FormEvent) {
     e.preventDefault();
     if (!id) return;
@@ -154,6 +168,13 @@ export function PedidoDetalhe() {
             {PRAZO_LABEL[prazo]}
             {dias !== null && dias >= 0 ? ` · ${dias}d` : ""}
           </span>
+          <button
+            onClick={handleDeletePedido}
+            className="rounded-tag border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors"
+            title="Excluir este pedido"
+          >
+            Excluir pedido
+          </button>
         </div>
       </div>
 
