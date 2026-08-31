@@ -147,22 +147,15 @@ export interface MovimentacaoPedido {
   created_at: string;
 }
 
-
-export type StatusOrcamento =
-  | "rascunho"
-  | "enviado"
-  | "aprovado"
-  | "recusado"
-  | "convertido";
+export type StatusOrcamento = "rascunho" | "enviado" | "aprovado" | "recusado" | "convertido";
 
 export interface Orcamento {
   id: string;
   numero_orcamento: number;
   cliente_id: string;
   data_emissao: string;
-  validade_dias: number;
   data_validade: string;
-  status: StatusOrcamento;
+  validade_dias: number;
   condicao_pagamento: string | null;
   percentual_desconto_avista: number;
   prazo_producao_dias: number | null;
@@ -171,6 +164,7 @@ export interface Orcamento {
   valor_subtotal: number;
   valor_desconto: number;
   valor_total: number;
+  status: StatusOrcamento;
   pedido_id: string | null;
   created_by: string | null;
   created_at: string;
