@@ -324,8 +324,7 @@ export function PedidoDetalhe() {
               {pagamentos.map((p) => (
                 <tr key={p.id} className="border-t">
                   <td className="p-3">{dateBR(p.data_pagamento)}</td>
-                  <td className="p-3 capitalize">{p.forma_pagamento.replaceAll("_", " ")}</td>
-                  <td className="p-3">{money(p.valor)}</td>
+                  <td className="p-3 capitalize">{p.forma_pagamento.replace(/_/g, " ")}</td>                  <td className="p-3">{money(p.valor)}</td>
                   <td className="p-3 text-text-500">{p.observacoes || "—"}</td>
                 </tr>
               ))}

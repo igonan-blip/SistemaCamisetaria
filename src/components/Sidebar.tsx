@@ -10,6 +10,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Painel" },
   { to: "/pedidos", label: "Pedidos" },
+  { to: "/orcamentos", label: "Orçamentos" },
   { to: "/kanban", label: "Produção" },
   { to: "/clientes", label: "Clientes" },
   { to: "/financeiro", label: "Financeiro", adminOnly: true },

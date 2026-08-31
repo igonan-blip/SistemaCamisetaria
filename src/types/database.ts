@@ -146,3 +146,59 @@ export interface MovimentacaoPedido {
   observacao: string | null;
   created_at: string;
 }
+
+
+export type StatusOrcamento =
+  | "rascunho"
+  | "enviado"
+  | "aprovado"
+  | "recusado"
+  | "convertido";
+
+export interface Orcamento {
+  id: string;
+  numero_orcamento: number;
+  cliente_id: string;
+  data_emissao: string;
+  validade_dias: number;
+  data_validade: string;
+  status: StatusOrcamento;
+  condicao_pagamento: string | null;
+  percentual_desconto_avista: number;
+  prazo_producao_dias: number | null;
+  previsao_entrega: string | null;
+  observacoes: string | null;
+  valor_subtotal: number;
+  valor_desconto: number;
+  valor_total: number;
+  pedido_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ItemOrcamento {
+  id: string;
+  orcamento_id: string;
+  produto_id: string;
+  modelo: string | null;
+  cor: string | null;
+  tecido: string | null;
+  tipo_manga: string | null;
+  personalizacao: string | null;
+  observacoes: string | null;
+  quantidade_total: number;
+  valor_unitario: number;
+  valor_total: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuantidadeOrcamento {
+  id: string;
+  item_orcamento_id: string;
+  tamanho_id: string;
+  quantidade: number;
+  created_at: string;
+  updated_at: string;
+}
