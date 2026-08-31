@@ -46,11 +46,3 @@
     @apply rounded-tag border border-ink-700/10 bg-white;
   }
 }
-
-
-@media print {
-  body * { visibility: hidden !important; }
-  .budget-print, .budget-print * { visibility: visible !important; }
-  .budget-print { position: absolute; left: 0; top: 0; width: 100%; margin: 0; box-shadow: none !important; }
-  @page { size: A4; margin: 12mm; }
-}

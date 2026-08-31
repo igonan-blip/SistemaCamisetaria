@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Cliente, EtapaProducao, Pagamento, Pedido, Produto, StatusPagamento, Tamanho } from "@/types/database";
+import type { Cliente, EtapaProducao, Pagamento, Pedido, Produto, StatusPagamento, Tamanho, Orcamento, StatusOrcamento } from "@/types/database";
 
 export const money = (value: number | null | undefined) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value || 0));
@@ -255,4 +255,105 @@ export function intervaloPeriodo(periodo: PeriodoDashboard, inicioCustom?: strin
     return { inicio: fmt(inicio), fim: fmt(fim) };
   }
   return { inicio: inicioCustom || fmt(hoje), fim: fimCustom || fmt(hoje) };
+}
+
+
+// ---------------------------------------------------------------------------
+// Orçamentos
+// ---------------------------------------------------------------------------
+
+export async function getOrcamentos() {
+  const { data, error } = await supabase
+    .from("orcamentos")
+    .select("*, clientes(nome_empresa, nome_responsavel, telefone, cpf_cnpj, cidade, estado)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []) as (Orcamento & {
+    clientes: Pick<Cliente, "nome_empresa" | "nome_responsavel" | "telefone" | "cpf_cnpj" | "cidade" | "estado"> | null;
+  })[];
+}
+
+export async function getOrcamentoCompleto(id: string) {
+  const [orcamento, itens] = await Promise.all([
+    supabase.from("orcamentos").select("*, clientes(*)").eq("id", id).single(),
+    supabase.from("itens_orcamento").select("*, produtos(*), quantidades_orcamento(*, tamanhos(*))").eq("orcamento_id", id),
+  ]);
+  if (orcamento.error) throw orcamento.error;
+  if (itens.error) throw itens.error;
+  return { orcamento: orcamento.data, itens: itens.data || [] };
+}
+
+export async function createOrcamento(input: {
+  cliente_id: string;
+  validade_dias: number;
+  condicao_pagamento?: string;
+  percentual_desconto_avista?: number;
+  prazo_producao_dias?: number;
+  previsao_entrega?: string;
+  observacoes?: string;
+  valor_desconto?: number;
+  itens: Array<{
+    produto_id: string;
+    modelo?: string;
+    cor?: string;
+    tecido?: string;
+    tipo_manga?: string;
+    personalizacao?: string;
+    observacoes?: string;
+    valor_unitario: number;
+    quantidades: Array<{ tamanho_id: string; quantidade: number }>;
+  }>;
+}) {
+  if (!input.cliente_id) throw new Error("Selecione o cliente.");
+  if (!input.itens.length) throw new Error("Adicione pelo menos um item ao orçamento.");
+  if (input.validade_dias <= 0) throw new Error("A validade deve ser maior que zero.");
+
+  // A função do banco mantém o cálculo/numeração do orçamento em uma única operação.
+  const { data, error } = await supabase.rpc("criar_orcamento_completo", {
+    p_cliente_id: input.cliente_id,
+    p_validade_dias: input.validade_dias,
+    p_condicao_pagamento: input.condicao_pagamento || "",
+    p_percentual_desconto_avista: input.percentual_desconto_avista ?? 5,
+    p_prazo_producao_dias: input.prazo_producao_dias || null,
+    p_previsao_entrega: input.previsao_entrega || null,
+    p_observacoes: input.observacoes || "",
+    p_valor_desconto: input.valor_desconto || 0,
+    p_itens: input.itens,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("O banco não retornou o orçamento criado.");
+
+  const { data: created, error: readError } = await supabase.from("orcamentos").select("*").eq("id", data).single();
+  if (readError) throw readError;
+  return created as Orcamento;
+}
+
+export async function updateOrcamentoStatus(id: string, status: StatusOrcamento) {
+  const { data, error } = await supabase.from("orcamentos").update({ status }).eq("id", id).select().single();
+  if (error) throw error;
+  return data as Orcamento;
+}
+
+export async function deleteOrcamento(id: string) {
+  const { error } = await supabase.from("orcamentos").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function converterOrcamentoEmPedido(
+  orcamentoId: string,
+  etapaId: string,
+  dataEntrega?: string
+) {
+  const { data: pedidoId, error } = await supabase.rpc("converter_orcamento_em_pedido", {
+    p_orcamento_id: orcamentoId,
+    p_etapa_id: etapaId,
+  });
+  if (error) throw error;
+  if (!pedidoId) throw new Error("O banco não retornou o pedido criado.");
+
+  if (dataEntrega) {
+    const { error: deliveryError } = await supabase.from("pedidos").update({ data_entrega: dataEntrega }).eq("id", pedidoId);
+    if (deliveryError) throw new Error(`Pedido criado, mas não foi possível definir a entrega: ${deliveryError.message}`);
+  }
+  return pedidoId as string;
 }

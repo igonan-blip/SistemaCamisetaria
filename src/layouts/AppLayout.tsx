@@ -5,7 +5,6 @@ import { Topbar } from "@/components/Topbar";
 const TITLES: Record<string, string> = {
   "/": "Painel",
   "/pedidos": "Pedidos",
-  "/orcamentos": "Orçamentos",
   "/kanban": "Produção",
   "/clientes": "Clientes",
   "/financeiro": "Financeiro",

@@ -6,7 +6,7 @@ import { AppLayout } from "@/layouts/AppLayout";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
 import { Pedidos } from "@/pages/Pedidos";
-import { Orcamentos } from "@/pages/Orcamentos";
+import { PedidoDetalhe } from "@/pages/PedidoDetalhe";
 import { Kanban } from "@/pages/Kanban";
 import { Clientes } from "@/pages/Clientes";
 import { Financeiro } from "@/pages/Financeiro";
@@ -14,6 +14,8 @@ import { Produtos } from "@/pages/Produtos";
 import { Tamanhos } from "@/pages/Tamanhos";
 import { Usuarios } from "@/pages/Usuarios";
 import { NotFound } from "@/pages/NotFound";
+import { Orcamentos } from "@/pages/Orcamentos";
+import { OrcamentoDetalhe } from "@/pages/OrcamentoDetalhe";
 
 export function App() {
   return (
@@ -32,6 +34,8 @@ export function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/orcamentos" element={<Orcamentos />} />
+            <Route path="/orcamentos/:id" element={<OrcamentoDetalhe />} />
+            <Route path="/pedidos/:id" element={<PedidoDetalhe />} />
             <Route path="/kanban" element={<Kanban />} />
             <Route path="/clientes" element={<Clientes />} />
 
